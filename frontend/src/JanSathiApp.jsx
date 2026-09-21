@@ -1322,6 +1322,11 @@ export default function JanSathiApp() {
               {[['hi', 'हिंदी'], ['en', 'English']].map(([value, label]) => <button key={value} onClick={() => setLanguage(value)} style={{ border: "1px solid #dbe6f7", borderRadius: 8, padding: "6px 12px", background: language === value ? "#0052CC" : "#fff", color: language === value ? "#fff" : "#2459A6", fontSize: 12, cursor: "pointer" }}>{label}</button>)}
             </div>
 
+            <div style={{ marginBottom: 18 }}>
+              <div style={{ fontSize: 24, fontWeight: 800, color: "#10213f" }}>Zaroori services</div>
+              <div style={{ fontSize: 14, color: "#5d6b82", marginTop: 4 }}>Apne aas-paas ki madad ek jagah paaiye.</div>
+            </div>
+
             <div style={{ marginBottom: 12 }}>
               <HomeCard {...localizedScreens.sos} onClick={() => setScreen("sos")} wide />
             </div>
@@ -1351,6 +1356,19 @@ export default function JanSathiApp() {
             </div>
             <div style={{ marginBottom: 12 }}>
               <HomeCard {...localizedScreens.assistant} onClick={() => setScreen("assistant")} wide />
+            </div>
+
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8, margin: "18px 0 12px" }}>
+              {[
+                ["1000+", "Service Providers"],
+                ["500K+", "Connected Members"],
+                ["24/7", "Emergency Support"],
+              ].map(([value, label]) => (
+                <div key={label} style={{ background: "#fff", border: "1px solid #dbe6f7", borderRadius: 8, padding: "12px 8px", textAlign: "center" }}>
+                  <div style={{ fontSize: 20, fontWeight: 800, color: "#0052CC" }}>{value}</div>
+                  <div style={{ fontSize: 12, color: "#5d6b82", marginTop: 4, lineHeight: 1.25 }}>{label}</div>
+                </div>
+              ))}
             </div>
 
             <button
