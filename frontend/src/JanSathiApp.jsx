@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { HeartPulse, Wrench, Store, Landmark, Siren, Wallet, ChevronRight, ArrowLeft, Plus, Minus, Trash2, Phone, ShieldAlert, Stethoscope, Sprout, ShoppingCart, MessageCircle, BriefcaseBusiness, CreditCard, ReceiptText, CloudSun, FileText } from "lucide-react";
+import JanSathiPremiumLogo from "./JanSathiPremiumLogo";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5001";
 
@@ -15,12 +16,12 @@ const fetchFeatureData = async () => {
 };
 
 const PRODUCTS = [
-  { id: 1, name: "Chawal (1kg)", price: 42 },
-  { id: 2, name: "Atta (5kg)", price: 210 },
-  { id: 3, name: "Dudh (1L)", price: 32 },
-  { id: 4, name: "Cheeni (1kg)", price: 44 },
-  { id: 5, name: "Chai patti (250g)", price: 65 },
-  { id: 6, name: "Tel (1L)", price: 130 },
+  { id: 1, name: "Chawal (1kg)", price: 42, stock: 20 },
+  { id: 2, name: "Atta (5kg)", price: 210, stock: 12 },
+  { id: 3, name: "Dudh (1L)", price: 32, stock: 8 },
+  { id: 4, name: "Cheeni (1kg)", price: 44, stock: 15 },
+  { id: 5, name: "Chai patti (250g)", price: 65, stock: 10 },
+  { id: 6, name: "Tel (1L)", price: 130, stock: 6 },
 ];
 
 const DEFAULT_SCREENS = {
@@ -113,6 +114,13 @@ const DEFAULT_SCREENS = {
     accent: "#2459A6",
     icon: MessageCircle,
   },
+  karosub: {
+    title: "KaroSub",
+    subtitle: "Premium membership aur plan upgrades",
+    bg: "#EEE8FF",
+    accent: "#5D3FD3",
+    icon: CreditCard,
+  },
   privacy: { title: "Privacy Policy", subtitle: "Aapka data kaise use hota hai", bg: "#EEF3FA", accent: "#2459A6", icon: FileText },
   terms: { title: "Terms & Conditions", subtitle: "App use karne ke niyam", bg: "#EEF3FA", accent: "#2459A6", icon: FileText },
 };
@@ -166,7 +174,7 @@ function HomeCard({ icon: Icon, title, subtitle, bg, accent, onClick, wide }) {
   );
 }
 
-function DetailScreen({ screenKey, onBack, screens, userName, onNavigate, language }) {
+function DetailScreen({ screenKey, onBack, screens, userName, onNavigate, language, homeAddress, onSaveHomeAddress }) {
   const s = screens[screenKey];
   const Icon = s.icon;
   const [selectedScheme, setSelectedScheme] = useState(null);
@@ -188,6 +196,14 @@ function DetailScreen({ screenKey, onBack, screens, userName, onNavigate, langua
   const [assistantError, setAssistantError] = useState("");
   const [assistantLoading, setAssistantLoading] = useState(false);
   const [compareProducts, setCompareProducts] = useState([]);
+  const [karosubConfig, setKaroSubConfig] = useState({ enabled: false, plans: { starter: 499, pro: 999, elite: 1999 } });
+  const [selectedPlan, setSelectedPlan] = useState("starter");
+  const [karosubStatus, setKaroSubStatus] = useState("");
+  const [karosubLoading, setKaroSubLoading] = useState(false);
+  const [bookingProvider, setBookingProvider] = useState(null);
+  const [bookingTime, setBookingTime] = useState("Jaldi se jaldi");
+  const [bookingNote, setBookingNote] = useState("");
+  const [bookingStatus, setBookingStatus] = useState("");
 
   useEffect(() => {
     if (screenKey !== "price") return;
@@ -195,6 +211,16 @@ function DetailScreen({ screenKey, onBack, screens, userName, onNavigate, langua
       .then((response) => response.ok ? response.json() : [])
       .then((data) => setCompareProducts(Array.isArray(data) ? data : []))
       .catch(() => setCompareProducts([]));
+  }, [screenKey]);
+
+  useEffect(() => {
+    if (screenKey !== "karosub") return;
+    fetch(`${API_URL}/api/karosub/config`)
+      .then((response) => response.ok ? response.json() : { enabled: false, plans: { starter: 499, pro: 999, elite: 1999 } })
+      .then((data) => {
+        setKaroSubConfig({ enabled: Boolean(data.enabled), plans: data.plans || { starter: 499, pro: 999, elite: 1999 } });
+      })
+      .catch(() => setKaroSubConfig({ enabled: false, plans: { starter: 499, pro: 999, elite: 1999 } }));
   }, [screenKey]);
 
   useEffect(() => {
@@ -250,6 +276,56 @@ function DetailScreen({ screenKey, onBack, screens, userName, onNavigate, langua
       setAssistantLoading(false);
     }
   };
+
+  const handleKaroSubCheckout = async () => {
+    setKaroSubLoading(true);
+    setKaroSubStatus("");
+    try {
+      const response = await fetch(`${API_URL}/api/karosub/checkout`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          plan: selectedPlan,
+          amount: karosubConfig.plans[selectedPlan] || 499,
+          customerName: userName || "Jan Sathi User",
+          phone: userPhone || "",
+          email: "",
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.message || "KaroSub checkout unavailable");
+      }
+      if (data.paymentUrl) {
+        window.open(data.paymentUrl, "_blank", "noopener,noreferrer");
+        setKaroSubStatus(`KaroSub checkout opened for ${selectedPlan} plan.`);
+      } else {
+        setKaroSubStatus("KaroSub checkout started successfully.");
+      }
+    } catch (error) {
+      setKaroSubStatus(error.message || "KaroSub checkout failed.");
+    } finally {
+      setKaroSubLoading(false);
+    }
+  };
+
+  const sendServiceBooking = () => {
+    if (!bookingProvider || !homeAddress.trim()) {
+      setBookingStatus("Pehle apna ghar ka address likho.");
+      return;
+    }
+    const message = [
+      "Namaste, mujhe ghar par service chahiye.",
+      `Service: ${bookingProvider.title}`,
+      `Address: ${homeAddress.trim()}`,
+      `Samay: ${bookingTime}`,
+      bookingNote.trim() ? `Kaam ki jankari: ${bookingNote.trim()}` : "",
+    ].filter(Boolean).join("\n");
+    onSaveHomeAddress(homeAddress.trim());
+    window.open(`https://wa.me/${bookingProvider.phone.replace(/\D/g, "")}?text=${encodeURIComponent(message)}`, "_blank", "noopener,noreferrer");
+    setBookingStatus("Request provider ko bhej di gayi. Woh aapse jaldi contact karega.");
+  };
+
   return (
     <div style={{ padding: "20px 18px", minHeight: 500 }}>
       <button
@@ -330,23 +406,78 @@ function DetailScreen({ screenKey, onBack, screens, userName, onNavigate, langua
 
       {screenKey === "sewa" && (
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          {["Electrician", "Plumber", "Tutor", "Mistri / Carpenter"].map((t) => {
-            const provider = screens.services?.find((service) => service.title === t);
-            const location = provider?.location || "Aas-paas ka area";
-            const providerName = provider?.providerName || "Local provider";
+          {bookingProvider && (
+            <div style={{ background: "#F4FAF2", border: "1px solid #B7D8A8", borderRadius: 12, padding: "14px" }}>
+              <div style={{ fontSize: 15, fontWeight: 700, color: "#254C2C" }}>{bookingProvider.title} ko ghar par bulao</div>
+              <div style={{ fontSize: 12.5, color: "#5a6b5d", marginTop: 4 }}>Address aur samay bhej dijiye. Provider WhatsApp par request paayega.</div>
+              <textarea value={homeAddress} onChange={(event) => onSaveHomeAddress(event.target.value)} placeholder="Ghar ka poora address likho" rows={3} style={{ width: "100%", boxSizing: "border-box", marginTop: 10, border: "1px solid #c9d9c7", borderRadius: 8, padding: "9px", fontSize: 13, fontFamily: "inherit", resize: "vertical" }} />
+              <select value={bookingTime} onChange={(event) => setBookingTime(event.target.value)} style={{ width: "100%", marginTop: 8, border: "1px solid #c9d9c7", borderRadius: 8, padding: "9px", background: "#fff", fontSize: 13 }}>
+                <option>Jaldi se jaldi</option>
+                <option>Aaj subah</option>
+                <option>Aaj shaam</option>
+                <option>Kal</option>
+              </select>
+              <input value={bookingNote} onChange={(event) => setBookingNote(event.target.value)} placeholder="Kaam ki jankari (optional)" style={{ width: "100%", boxSizing: "border-box", marginTop: 8, border: "1px solid #c9d9c7", borderRadius: 8, padding: "9px", fontSize: 13 }} />
+              <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+                <button onClick={sendServiceBooking} style={{ flex: 1, background: "#2F7A55", color: "#fff", border: "none", borderRadius: 8, padding: "10px", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>Request bhejo</button>
+                <button onClick={() => { setBookingProvider(null); setBookingStatus(""); }} style={{ background: "#fff", color: "#555", border: "1px solid #c9d9c7", borderRadius: 8, padding: "10px 12px", fontSize: 13, cursor: "pointer" }}>Cancel</button>
+              </div>
+              {bookingStatus && <div style={{ color: "#2F6B35", fontSize: 12.5, marginTop: 9 }}>{bookingStatus}</div>}
+            </div>
+          )}
+          {[
+            { title: "Electrician", providerName: "Rajesh Electric Works", location: "Ward No. 7, Main Road", phone: "+91 98765 43210", serviceId: "ELE-104" },
+            { title: "Plumber", providerName: "Sharma Plumbing Service", location: "Near Bus Stand", phone: "+91 99887 66554", serviceId: "PLU-206" },
+            { title: "Mistri / Carpenter", providerName: "Mohan Furniture & Repair", location: "Kisan Chowk", phone: "+91 98111 22334", serviceId: "CAR-309" },
+            { title: "Construction Helper", providerName: "Bharat Building Support", location: "Industrial Road", phone: "+91 97654 22111", serviceId: "CON-440" },
+          ].map((serviceItem) => {
+            const provider = screens.services?.find((service) => service.title === serviceItem.title)
+              || { providerName: serviceItem.providerName, location: serviceItem.location, phone: serviceItem.phone, serviceId: serviceItem.serviceId, price: 0 };
+            const location = provider?.location || serviceItem.location;
+            const providerName = provider?.providerName || serviceItem.providerName;
+            const phone = provider?.phone || serviceItem.phone;
+            const serviceId = provider?.serviceId || serviceItem.serviceId;
+            const whatsapp = provider?.whatsapp || phone;
+            const mapQuery = `${providerName} ${serviceItem.title} ${location}`;
             return (
-              <div key={t} style={{ background: "#fff", border: "1px solid #eee", borderRadius: 12, padding: "12px 14px" }}>
+              <div key={serviceItem.title} style={{ background: "#fff", border: "1px solid #eee", borderRadius: 12, padding: "12px 14px" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 14, color: "#333", fontWeight: 600 }}>
-                  {t} <ChevronRight size={16} color="#999" />
+                  {serviceItem.title} <ChevronRight size={16} color="#999" />
                 </div>
                 <div style={{ fontSize: 12.5, color: "#777", marginTop: 5 }}>
                   {providerName} · {location}{provider?.price ? ` · ₹${provider.price}` : ""}
                 </div>
+                <div style={{ fontSize: 12, color: "#4d4d4d", marginTop: 8 }}>
+                  <strong>Contact:</strong> {phone}
+                </div>
+                <div style={{ fontSize: 12, color: "#4d4d4d", marginTop: 4 }}>
+                  <strong>ID:</strong> {serviceId}
+                </div>
+                <div style={{ display: "flex", gap: 8, marginTop: 10, flexWrap: "wrap" }}>
+                  <button
+                    onClick={() => window.open(`tel:${phone.replace(/\s+/g, "")}`, "_self")}
+                    style={{ background: s.bg, color: s.accent, border: "none", borderRadius: 8, padding: "7px 10px", fontSize: 12.5, fontWeight: 600, cursor: "pointer" }}
+                  >
+                    📞 Call
+                  </button>
+                  <button
+                    onClick={() => window.open(`https://wa.me/${phone.replace(/\D/g, "")}`, "_blank", "noopener,noreferrer")}
+                    style={{ background: "#E7F9EE", color: "#1C8C52", border: "none", borderRadius: 8, padding: "7px 10px", fontSize: 12.5, fontWeight: 600, cursor: "pointer" }}
+                  >
+                    💬 WhatsApp
+                  </button>
+                  <button
+                    onClick={() => window.open(`https://www.google.com/maps/search/${encodeURIComponent(mapQuery)}`, "_blank")}
+                    style={{ background: s.bg, color: s.accent, border: "none", borderRadius: 8, padding: "7px 10px", fontSize: 12.5, fontWeight: 600, cursor: "pointer" }}
+                  >
+                    📍 Map
+                  </button>
+                </div>
                 <button
-                  onClick={() => window.open(`https://www.google.com/maps/search/${encodeURIComponent(`${providerName} ${t} ${location}`)}`, "_blank")}
-                  style={{ marginTop: 9, background: s.bg, color: s.accent, border: "none", borderRadius: 8, padding: "7px 10px", fontSize: 12.5, fontWeight: 600, cursor: "pointer" }}
+                  onClick={() => { setBookingProvider({ title: serviceItem.title, phone: whatsapp }); setBookingStatus(""); }}
+                  style={{ width: "100%", marginTop: 9, background: "#fff", color: "#333", border: "1px solid #ddd", borderRadius: 8, padding: "8px 10px", fontSize: 12.5, fontWeight: 600, cursor: "pointer" }}
                 >
-                  📍 Contact / Map kholo
+                  🏠 Ghar par bulao
                 </button>
               </div>
             );
@@ -516,6 +647,56 @@ function DetailScreen({ screenKey, onBack, screens, userName, onNavigate, langua
         </div>
       )}
 
+      {screenKey === "karosub" && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          <div style={{ background: "#fff", border: "1px solid #eee", borderRadius: 12, padding: 14 }}>
+            <div style={{ fontSize: 15, fontWeight: 700, color: "#333" }}>Choose a KaroSub plan</div>
+            <div style={{ fontSize: 12.5, color: "#666", marginTop: 5 }}>Premium access ke liye table below se plan select karein.</div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 12 }}>
+              {Object.entries(karosubConfig.plans).map(([planKey, price]) => {
+                const active = selectedPlan === planKey;
+                return (
+                  <button
+                    key={planKey}
+                    onClick={() => setSelectedPlan(planKey)}
+                    style={{
+                      width: "100%",
+                      padding: "12px 14px",
+                      borderRadius: 10,
+                      border: active ? "1px solid #5D3FD3" : "1px solid #ddd",
+                      background: active ? "#F3EEFF" : "#fff",
+                      textAlign: "left",
+                      cursor: "pointer",
+                    }}
+                  >
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 14, fontWeight: 700, color: "#2d2d2d" }}>
+                      <span>{planKey.charAt(0).toUpperCase() + planKey.slice(1)}</span>
+                      <span>₹{price}</span>
+                    </div>
+                    <div style={{ fontSize: 12.5, color: "#666", marginTop: 3 }}>
+                      {planKey === "starter" ? "Basic premium access" : planKey === "pro" ? "Advanced features and support" : "Full premium suite and concierge"}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+            <button
+              onClick={handleKaroSubCheckout}
+              disabled={karosubLoading || !karosubConfig.enabled}
+              style={{ width: "100%", marginTop: 12, background: karosubConfig.enabled ? s.accent : "#c8c8c8", color: "#fff", border: "none", borderRadius: 9, padding: "12px 12px", fontSize: 13.5, fontWeight: 700, cursor: karosubLoading ? "wait" : "pointer" }}
+            >
+              {karosubLoading ? "Processing..." : `Pay ₹${karosubConfig.plans[selectedPlan] || 499} via KaroSub`}
+            </button>
+            {karosubStatus && <div style={{ background: "#EEF7FF", color: "#2459A6", borderRadius: 9, padding: "10px 12px", fontSize: 12.5, marginTop: 10 }}>{karosubStatus}</div>}
+            {!karosubConfig.enabled && (
+              <div style={{ marginTop: 10, background: "#FFF4D6", color: "#765B16", borderRadius: 9, padding: "10px 12px", fontSize: 12.5 }}>
+                KaroSub not configured yet. Backend me KAROSUB_API_KEY aur KAROSUB_BASE_URL add karna hai.
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {screenKey === "privacy" && (
         <div style={{ background: "#fff", borderRadius: 12, padding: 14, color: "#444", fontSize: 13, lineHeight: 1.55 }}>
           {language === "hi" ? <><b>Hum kya collect karte hain</b><p>Phone number, profile details, orders, expenses aur app messages service dene ke liye save ho sakte hain.</p><b>Payment safety</b><p>Jan Sathi UPI PIN, bank password ya OTP store nahi karta. Payment approval UPI app/bank screen par hota hai.</p><b>AI Assistant</b><p>Assistant ke sawal answer ke liye AI provider ko process ho sakte hain. Sensitive details share na karein.</p><b>Data control</b><p>Account ya data delete karne ke liye Jan Sathi support/admin se request karein.</p></> : <><b>What we collect</b><p>Your phone number, profile details, orders, expenses, and app messages may be stored to provide the service.</p><b>Payment safety</b><p>Jan Sathi never stores your UPI PIN, bank password, or OTP. Payment approval happens in your UPI app or bank screen.</p><b>AI Assistant</b><p>Questions sent to the Assistant may be processed by an AI provider to generate answers. Do not share sensitive details.</p><b>Your control</b><p>Contact Jan Sathi support/admin to request account or data deletion.</p></>}
@@ -576,9 +757,14 @@ function DetailScreen({ screenKey, onBack, screens, userName, onNavigate, langua
   );
 }
 
-function GroceryScreen({ onBack, cart, setCart, screens, products, userId }) {
+function GroceryScreen({ onBack, cart, setCart, screens, products, setProducts, userId }) {
   const s = screens.grocery;
   const [orderMessage, setOrderMessage] = useState("");
+  const [showAddItem, setShowAddItem] = useState(false);
+  const [newItemName, setNewItemName] = useState("");
+  const [newItemPrice, setNewItemPrice] = useState("");
+  const [newItemUnit, setNewItemUnit] = useState("piece");
+  const [newItemStock, setNewItemStock] = useState("10");
 
   const changeQty = (id, delta) => {
     setCart((prev) => {
@@ -591,12 +777,20 @@ function GroceryScreen({ onBack, cart, setCart, screens, products, userId }) {
   };
 
   const itemCount = Object.values(cart).reduce((a, b) => a + b, 0);
-  const total = products.reduce((sum, p) => sum + (cart[p.id] || 0) * p.price, 0);
+  const total = products.reduce((sum, product) => sum + (cart[product._id || product.id] || 0) * product.price, 0);
+
+  const requestShopDelivery = () => {
+    if (itemCount === 0) {
+      setOrderMessage("Pehle shop se kuch items add karo.");
+      return;
+    }
+    setOrderMessage("Shop ko delivery request bhej diya gaya. Shop owner aapke address par delivery ke liye contact karega.");
+  };
 
   const placeOrder = async () => {
     const items = products
-      .filter((product) => cart[product.id])
-      .map((product) => ({ productId: product._id, name: product.name, quantity: cart[product.id], price: product.price }));
+      .filter((product) => cart[product._id || product.id])
+      .map((product) => ({ productId: product._id, name: product.name, quantity: cart[product._id || product.id], price: product.price }));
     try {
       const response = await fetch(`${API_URL}/api/orders`, {
         method: "POST",
@@ -609,6 +803,33 @@ function GroceryScreen({ onBack, cart, setCart, screens, products, userId }) {
       setCart({});
     } catch (error) {
       setOrderMessage("Order nahi ho paya. Dobara try karo.");
+    }
+  };
+
+  const addShopItem = async () => {
+    const price = Number(newItemPrice);
+    const stock = Number(newItemStock);
+    if (!newItemName.trim() || !price || price <= 0 || stock < 0) {
+      setOrderMessage("Samaan ka naam, sahi price aur stock likho.");
+      return;
+    }
+    try {
+      const response = await fetch(`${API_URL}/api/products`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: newItemName.trim(), price, unit: newItemUnit, category: "Kirana", stock }),
+      });
+      const product = await response.json();
+      if (!response.ok) throw new Error(product.message || "Product add failed");
+      setProducts((current) => [product, ...current]);
+      setNewItemName("");
+      setNewItemPrice("");
+      setNewItemUnit("piece");
+      setNewItemStock("10");
+      setShowAddItem(false);
+      setOrderMessage(`${product.name} dukaan me add ho gaya.`);
+    } catch (error) {
+      setOrderMessage("Samaan add nahi hua. Dobara try karo.");
     }
   };
 
@@ -627,29 +848,57 @@ function GroceryScreen({ onBack, cart, setCart, screens, products, userId }) {
         <div style={{ fontSize: 14, color: "#6b6b6b", marginTop: 4 }}>{s.subtitle}</div>
       </div>
 
+      <button onClick={() => setShowAddItem((current) => !current)} style={{ width: "100%", background: "#fff", color: "#2D6A3F", border: "1px solid #B7D8A8", borderRadius: 10, padding: "11px 12px", fontSize: 13.5, fontWeight: 700, cursor: "pointer", marginBottom: 12 }}>
+        {showAddItem ? "Samaan add karna band karo" : "Shop owner: naya samaan add karo"}
+      </button>
+
+      {showAddItem && (
+        <div style={{ background: "#F4FAF2", border: "1px solid #B7D8A8", borderRadius: 12, padding: 12, marginBottom: 14 }}>
+          <div style={{ fontSize: 14, fontWeight: 700, color: "#254C2C", marginBottom: 9 }}>Dukaan ka samaan add karo</div>
+          <input value={newItemName} onChange={(event) => setNewItemName(event.target.value)} placeholder="Samaan ka naam, jaise Biscuit" style={{ width: "100%", boxSizing: "border-box", border: "1px solid #c9d9c7", borderRadius: 8, padding: "10px", fontSize: 13, marginBottom: 8 }} />
+          <div style={{ display: "flex", gap: 8 }}>
+            <input value={newItemPrice} onChange={(event) => setNewItemPrice(event.target.value)} inputMode="decimal" placeholder="Price" style={{ flex: 1, minWidth: 0, border: "1px solid #c9d9c7", borderRadius: 8, padding: "10px", fontSize: 13 }} />
+            <select value={newItemUnit} onChange={(event) => setNewItemUnit(event.target.value)} style={{ width: 100, border: "1px solid #c9d9c7", borderRadius: 8, padding: "10px", background: "#fff", fontSize: 13 }}>
+              <option value="piece">piece</option>
+              <option value="kg">kg</option>
+              <option value="litre">litre</option>
+              <option value="packet">packet</option>
+            </select>
+          </div>
+          <input value={newItemStock} onChange={(event) => setNewItemStock(event.target.value)} inputMode="numeric" placeholder="Kitne item available hain" style={{ width: "100%", boxSizing: "border-box", marginTop: 8, border: "1px solid #c9d9c7", borderRadius: 8, padding: "10px", fontSize: 13 }} />
+          <button onClick={addShopItem} style={{ width: "100%", marginTop: 9, background: "#2F7A55", color: "#fff", border: "none", borderRadius: 8, padding: "10px", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>Dukaan me add karo</button>
+        </div>
+      )}
+
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
         {products.map((p) => {
-          const qty = cart[p.id] || 0;
+          const productId = p._id || p.id;
+          const qty = cart[productId] || 0;
+          const isAvailable = p.stock === undefined || Number(p.stock) > 0;
           return (
-            <div key={p.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#fff", border: "1px solid #eee", borderRadius: 12, padding: "12px 14px" }}>
+            <div key={productId} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#fff", border: "1px solid #eee", borderRadius: 12, padding: "12px 14px" }}>
               <div>
                 <div style={{ fontSize: 14, fontWeight: 600, color: "#333" }}>{p.name}</div>
-                <div style={{ fontSize: 12.5, color: "#777", marginTop: 2 }}>₹{p.price}</div>
+                <div style={{ fontSize: 12.5, color: "#777", marginTop: 2 }}>₹{p.price} / {p.unit || "piece"}</div>
+                <div style={{ display: "inline-block", marginTop: 6, background: isAvailable ? "#E7F7E8" : "#FCE8E6", color: isAvailable ? "#26723B" : "#B3261E", borderRadius: 999, padding: "3px 7px", fontSize: 11, fontWeight: 700 }}>
+                  {isAvailable ? `Available${p.stock !== undefined ? ` · ${p.stock} left` : ""}` : "Out of stock"}
+                </div>
               </div>
               {qty === 0 ? (
                 <button
-                  onClick={() => changeQty(p.id, 1)}
-                  style={{ background: s.bg, color: s.accent, border: "none", borderRadius: 8, padding: "6px 14px", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
+                  onClick={() => changeQty(productId, 1)}
+                  disabled={!isAvailable}
+                  style={{ background: isAvailable ? s.bg : "#f1f1f1", color: isAvailable ? s.accent : "#999", border: "none", borderRadius: 8, padding: "6px 14px", fontSize: 13, fontWeight: 600, cursor: isAvailable ? "pointer" : "not-allowed" }}
                 >
-                  Add
+                  {isAvailable ? "Add" : "Unavailable"}
                 </button>
               ) : (
                 <div style={{ display: "flex", alignItems: "center", gap: 10, background: s.bg, borderRadius: 8, padding: "4px 8px" }}>
-                  <button onClick={() => changeQty(p.id, -1)} style={{ background: "none", border: "none", cursor: "pointer", color: s.accent }}>
+                  <button onClick={() => changeQty(productId, -1)} style={{ background: "none", border: "none", cursor: "pointer", color: s.accent }}>
                     <Minus size={15} />
                   </button>
                   <span style={{ fontSize: 14, fontWeight: 600, color: s.accent, minWidth: 14, textAlign: "center" }}>{qty}</span>
-                  <button onClick={() => changeQty(p.id, 1)} style={{ background: "none", border: "none", cursor: "pointer", color: s.accent }}>
+                  <button onClick={() => changeQty(productId, 1)} style={{ background: "none", border: "none", cursor: "pointer", color: s.accent }}>
                     <Plus size={15} />
                   </button>
                 </div>
@@ -660,14 +909,19 @@ function GroceryScreen({ onBack, cart, setCart, screens, products, userId }) {
       </div>
 
       {itemCount > 0 && (
-        <div style={{ position: "absolute", left: 0, right: 0, bottom: 0, background: "#fff", borderTop: "1px solid #eee", padding: "14px 18px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div style={{ position: "absolute", left: 0, right: 0, bottom: 0, background: "#fff", borderTop: "1px solid #eee", padding: "14px 18px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}>
           <div>
             <div style={{ fontSize: 12.5, color: "#777" }}>{itemCount} item{itemCount > 1 ? "s" : ""}</div>
             <div style={{ fontSize: 16, fontWeight: 700, color: "#2b2b2b" }}>₹{total}</div>
           </div>
-          <button onClick={placeOrder} style={{ background: s.accent, color: "#fff", border: "none", borderRadius: 10, padding: "10px 20px", fontSize: 14, fontWeight: 600, cursor: "pointer" }}>
-            Order karo
-          </button>
+          <div style={{ display: "flex", gap: 8 }}>
+            <button onClick={requestShopDelivery} style={{ background: "#EAF3EA", color: "#2D6A3F", border: "none", borderRadius: 10, padding: "10px 12px", fontSize: 12.5, fontWeight: 600, cursor: "pointer" }}>
+              Delivery mangao
+            </button>
+            <button onClick={placeOrder} style={{ background: s.accent, color: "#fff", border: "none", borderRadius: 10, padding: "10px 20px", fontSize: 14, fontWeight: 600, cursor: "pointer" }}>
+              Order karo
+            </button>
+          </div>
         </div>
       )}
       {orderMessage && <div style={{ marginTop: 16, background: "#E3F3DC", color: "#2F6B35", borderRadius: 10, padding: "10px 12px", fontSize: 13 }}>{orderMessage}</div>}
@@ -763,6 +1017,15 @@ function KharchaTracker({ onBack, expenses, setExpenses, userId }) {
 }
 
 function OrdersScreen({ onBack, orders }) {
+  const statusLabel = (status) => ({
+    pending: "Shop ko bheja gaya",
+    accepted: "Shop ne accept kiya",
+    preparing: "Order taiyar ho raha hai",
+    out_for_delivery: "Delivery raste me hai",
+    delivered: "Deliver ho gaya",
+    cancelled: "Cancel ho gaya",
+  }[status] || "Shop ko bheja gaya");
+
   return (
     <div style={{ padding: "20px 18px", minHeight: 500 }}>
       <button onClick={onBack} style={{ background: "none", border: "none", display: "flex", alignItems: "center", gap: 6, color: "#5a5a5a", fontSize: 14, cursor: "pointer", padding: 0, marginBottom: 18 }}>
@@ -778,7 +1041,7 @@ function OrdersScreen({ onBack, orders }) {
       ) : orders.map((order) => (
         <div key={order._id} style={{ background: "#fff", border: "1px solid #eee", borderRadius: 12, padding: "12px 14px", marginBottom: 10 }}>
           <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14, fontWeight: 600, color: "#333" }}>
-            <span>Order #{order._id.slice(-6)}</span><span style={{ color: "#3B7A3E" }}>{order.status}</span>
+            <span>Order #{order._id.slice(-6)}</span><span style={{ color: "#3B7A3E" }}>{statusLabel(order.status)}</span>
           </div>
           <div style={{ fontSize: 12.5, color: "#777", marginTop: 5 }}>{order.items?.map((item) => `${item.name} x${item.quantity}`).join(", ")}</div>
           <div style={{ fontSize: 14, fontWeight: 700, color: "#333", marginTop: 6 }}>₹{order.total}</div>
@@ -906,9 +1169,9 @@ function EmailLoginScreen({ onLogin }) {
   return (
     <div style={{ padding: "40px 24px", minHeight: 500, display: "flex", flexDirection: "column", justifyContent: "center", background: "linear-gradient(180deg, #F5F9FF 0%, #FFFFFF 100%)" }}>
       <div style={{ textAlign: "center", marginBottom: 30 }}>
-        <div style={{ width: 82, height: 82, borderRadius: "26px", background: "linear-gradient(145deg, #0052CC 0%, #0066FF 100%)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 27, letterSpacing: "1px", margin: "0 auto 14px", boxShadow: "0 16px 28px rgba(0, 82, 204, 0.22)" }}>JS</div>
+        <div style={{ margin: "0 auto 14px", width: 82, height: 82 }}><JanSathiPremiumLogo size={82} variant="navy-gold" animated /></div>
         <div style={{ fontSize: 32, fontWeight: 800, color: "#0052CC", letterSpacing: "0.5px" }}>JAN SATHI</div>
-        <div style={{ fontSize: 12.5, color: "#FF6B6B", marginTop: 6, fontWeight: 700 }}>Har Zaroorat, Ek Jagah</div>
+        <div style={{ fontSize: 12.5, color: "#E74C3C", marginTop: 6, fontWeight: 700 }}>Har Zaroorat, Ek Jagah</div>
       </div>
       <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
         <button onClick={() => { setMode('login'); setError(''); }} style={{ flex: 1, padding: "10px 4px", borderRadius: 9, border: "1px solid #0052CC", background: mode === 'login' ? '#0052CC' : '#fff', color: mode === 'login' ? '#fff' : '#0052CC', fontWeight: 600, cursor: 'pointer' }}>Login</button>
@@ -1077,11 +1340,9 @@ function LoginScreen({ onLogin }) {
   return (
 <div style={{ padding: "40px 24px", minHeight: 500, display: "flex", flexDirection: "column", justifyContent: "center", background: "linear-gradient(180deg, #F5F9FF 0%, #FFFFFF 100%)" }}>
       <div style={{ textAlign: "center", marginBottom: 30 }}>
-        <div style={{ width: 82, height: 82, borderRadius: "26px", background: "linear-gradient(145deg, #0052CC 0%, #0066FF 100%)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 27, letterSpacing: "1px", margin: "0 auto 14px", boxShadow: "0 16px 28px rgba(0, 82, 204, 0.22)" }}>
-          JS
-        </div>
+        <div style={{ margin: "0 auto 14px", width: 82, height: 82 }}><JanSathiPremiumLogo size={82} variant="navy-gold" animated /></div>
         <div style={{ fontSize: 32, fontWeight: 800, color: "#0052CC", letterSpacing: "0.5px" }}>JAN SATHI</div>
-        <div style={{ fontSize: 12.5, color: "#FF6B6B", marginTop: 6, fontWeight: 700, letterSpacing: "0.2px" }}>Har Zaroorat, Ek Jagah</div>
+        <div style={{ fontSize: 12.5, color: "#E74C3C", marginTop: 6, fontWeight: 700, letterSpacing: "0.2px" }}>Har Zaroorat, Ek Jagah</div>
       </div>
 
       {step === "phone" ? (
@@ -1205,6 +1466,11 @@ export default function JanSathiApp() {
   const [userName, setUserName] = useState("Vipul Kiwana");
   const [userId, setUserId] = useState("");
   const [language, setLanguage] = useState("hi");
+  const [homeAddress, setHomeAddress] = useState(() => localStorage.getItem("janSathiHomeAddress") || "");
+
+  useEffect(() => {
+    localStorage.setItem("janSathiHomeAddress", homeAddress);
+  }, [homeAddress]);
 
   useEffect(() => {
     const loadFeatures = async () => {
@@ -1291,6 +1557,11 @@ export default function JanSathiApp() {
 
   const total = Array.isArray(expenses) ? expenses.reduce((s, e) => s + Number(e.amount || 0), 0) : 0;
   const localizedScreens = localizeScreens(screens, language);
+  const quickActions = [
+    { label: "Electrician", subtitle: "Ghar par aa kar", phone: "+919876543210", message: "Namaste, mujhe electrician chahiye. Kya aap ghar par aa sakte hain?" },
+    { label: "Plumber", subtitle: "Pipe fix", phone: "+919988766554", message: "Namaste, mujhe plumber chahiye. Kya aap ghar par aa sakte hain?" },
+    { label: "Kirana", subtitle: "Delivery", phone: "+919900112233", message: "Namaste, mujhe kirana delivery chahiye. Kya aap ghar par delivery kar sakte hain?" },
+  ];
 
   return (
     <div style={{ minHeight: "100vh", background: "linear-gradient(180deg, #eef5ff 0%, #dfeeff 100%)", display: "flex", justifyContent: "center", alignItems: "center", fontFamily: "'Segoe UI', sans-serif" }}>
@@ -1307,7 +1578,7 @@ export default function JanSathiApp() {
         ) : screen === "home" ? (
           <div style={{ padding: "24px 20px" }}>
             <button onClick={() => setScreen("home")} aria-label="Jan Sathi home" style={{ width: "100%", display: "flex", alignItems: "center", gap: 10, marginBottom: 20, padding: "10px 12px", borderRadius: 18, background: "linear-gradient(135deg, rgba(0, 82, 204, 0.09), rgba(255, 107, 107, 0.06))", border: "1px solid rgba(0, 82, 204, 0.06)", textAlign: "left", cursor: "pointer" }}>
-              <div style={{ width: 50, height: 50, borderRadius: "17px", background: "linear-gradient(145deg, #0052CC 0%, #0066FF 100%)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 17, letterSpacing: "0.5px", boxShadow: "0 12px 22px rgba(0, 82, 204, 0.22)" }}>JS</div>
+              <JanSathiPremiumLogo size={50} variant="navy-gold" />
               <div>
                 <div style={{ fontSize: 15, fontWeight: 800, color: "#0052CC" }}>JAN SATHI</div>
                 <div style={{ fontSize: 11.5, color: "#4f6ca8" }}>{userName} · +91 {userPhone}</div>
@@ -1316,10 +1587,32 @@ export default function JanSathiApp() {
 
             <div style={{ textAlign: "center", marginBottom: 22 }}>
               <div style={{ fontSize: 32, fontWeight: 800, color: "#0052CC" }}>JAN SATHI</div>
-              <div style={{ fontSize: 12.5, color: "#FF6B6B", marginTop: 5, fontWeight: 700 }}>Har Zaroorat, Ek Jagah</div>
+              <div style={{ fontSize: 12.5, color: "#E74C3C", marginTop: 5, fontWeight: 700 }}>Har Zaroorat, Ek Jagah</div>
             </div>
             <div style={{ display: "flex", justifyContent: "center", gap: 6, marginBottom: 14 }}>
               {[['hi', 'हिंदी'], ['en', 'English']].map(([value, label]) => <button key={value} onClick={() => setLanguage(value)} style={{ border: "1px solid #dbe6f7", borderRadius: 8, padding: "6px 12px", background: language === value ? "#0052CC" : "#fff", color: language === value ? "#fff" : "#2459A6", fontSize: 12, cursor: "pointer" }}>{label}</button>)}
+            </div>
+
+            <div style={{ background: "linear-gradient(135deg, #ecf7ff 0%, #fef6eb 100%)", border: "1px solid rgba(0, 82, 204, 0.08)", borderRadius: 18, padding: "16px 14px", marginBottom: 18 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                <div>
+                  <div style={{ fontSize: 16, fontWeight: 800, color: "#0d2347" }}>Quick help</div>
+                  <div style={{ fontSize: 12, color: "#5d6b82", marginTop: 2 }}>Ek click me madad mangao</div>
+                </div>
+                <div style={{ background: "#EAF3FF", color: "#0052CC", borderRadius: 999, padding: "5px 8px", fontSize: 11, fontWeight: 700 }}>LIVE</div>
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
+                {quickActions.map((action) => (
+                  <button
+                    key={action.label}
+                    onClick={() => window.open(`https://wa.me/${action.phone.replace(/\D/g, "")}?text=${encodeURIComponent(action.message)}`, "_blank", "noopener,noreferrer")}
+                    style={{ background: "#fff", border: "1px solid #dfe9f8", borderRadius: 12, padding: "10px 8px", cursor: "pointer", textAlign: "center" }}
+                  >
+                    <div style={{ fontSize: 12.5, fontWeight: 700, color: "#1f2d3d" }}>{action.label}</div>
+                    <div style={{ fontSize: 10.5, color: "#66758c", marginTop: 4 }}>{action.subtitle}</div>
+                  </button>
+                ))}
+              </div>
             </div>
 
             <div style={{ marginBottom: 18 }}>
@@ -1356,6 +1649,9 @@ export default function JanSathiApp() {
             </div>
             <div style={{ marginBottom: 12 }}>
               <HomeCard {...localizedScreens.assistant} onClick={() => setScreen("assistant")} wide />
+            </div>
+            <div style={{ marginBottom: 12 }}>
+              <HomeCard {...localizedScreens.karosub} onClick={() => setScreen("karosub")} wide />
             </div>
 
             <button
@@ -1402,10 +1698,10 @@ export default function JanSathiApp() {
           <AdminScreen onBack={() => setScreen("home")} />
         ) : screen === "grocery" ? (
           <div style={{ position: "relative" }}>
-            <GroceryScreen onBack={() => setScreen("home")} cart={cart} setCart={setCart} screens={screens} products={products} userId={userId} />
+            <GroceryScreen onBack={() => setScreen("home")} cart={cart} setCart={setCart} screens={screens} products={products} setProducts={setProducts} userId={userId} />
           </div>
         ) : (
-          <DetailScreen screenKey={screen} onBack={() => setScreen("home")} onNavigate={setScreen} screens={{ ...localizedScreens, services, jobs: { ...localizedScreens.jobs, items: jobs.length ? jobs : localizedScreens.jobs.items } }} userName={userName} language={language} />
+          <DetailScreen screenKey={screen} onBack={() => setScreen("home")} onNavigate={setScreen} screens={{ ...localizedScreens, services, jobs: { ...localizedScreens.jobs, items: jobs.length ? jobs : localizedScreens.jobs.items } }} userName={userName} language={language} homeAddress={homeAddress} onSaveHomeAddress={setHomeAddress} />
         )}
       </div>
     </div>

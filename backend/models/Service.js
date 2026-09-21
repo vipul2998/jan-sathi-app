@@ -8,6 +8,10 @@ const serviceSchema = new mongoose.Schema(
     price: { type: Number, default: 0 },
     location: { type: String, default: '' },
     providerName: { type: String, default: '' },
+    phone: { type: String, default: '' },
+    whatsapp: { type: String, default: '' },
+    serviceId: { type: String, default: '' },
+    isAvailable: { type: Boolean, default: true },
   },
   { timestamps: true }
 );

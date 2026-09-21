@@ -8,12 +8,17 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  --brand-navy: #001a4d;
   --brand-dark: #0052CC;
   --brand-light: #0066FF;
-  --brand-red: #FF6B6B;
+  --brand-light-highlight: #66B2FF;
+  --brand-gold: #FFD700;
+  --brand-gold-deep: #FF8C00;
+  --brand-red: #E74C3C;
+  --brand-red-deep: #C0392B;
   --brand-soft: #EAF3FF;
   --brand-surface: #F5F9FF;
-  --brand-ink: #10213f;
+  --brand-ink: #001a4d;
   --type-heading-1: 32px;
   --type-heading-2: 24px;
   --type-heading-3: 20px;
@@ -50,6 +55,26 @@ body {
 
 button, input {
   font: inherit;
+}
+
+.jan-sathi-logo svg {
+  display: block;
+  max-width: 100%;
+  transition: transform 0.3s ease, filter 0.3s ease;
+}
+
+.jan-sathi-logo:hover svg {
+  filter: drop-shadow(0 10px 20px rgba(255, 215, 0, 0.24));
+  transform: scale(1.06);
+}
+
+.jan-sathi-logo.floating svg {
+  animation: jan-sathi-float 3s ease-in-out infinite;
+}
+
+@keyframes jan-sathi-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
 }
 
 @media (max-width: 480px) {

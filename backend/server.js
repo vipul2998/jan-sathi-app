@@ -14,6 +14,7 @@ const ordersRouter = require('./routes/orders');
 const expensesRouter = require('./routes/expenses');
 const communityRouter = require('./routes/community');
 const assistantRouter = require('./routes/assistant');
+const karosubRouter = require('./routes/karosub');
 const adminRouter = require('./routes/admin');
 
 const app = express();
@@ -52,6 +53,7 @@ app.use('/api', ordersRouter);
 app.use('/api', expensesRouter);
 app.use('/api', communityRouter);
 app.use('/api', assistantRouter);
+app.use('/api', karosubRouter);
 app.use('/api', adminRouter);
 
 function startServer() {

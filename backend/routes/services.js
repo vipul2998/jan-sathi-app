@@ -21,6 +21,10 @@ router.post('/services', async (req, res) => {
       price: req.body.price || 0,
       location: req.body.location || '',
       providerName: req.body.providerName || '',
+      phone: req.body.phone || '',
+      whatsapp: req.body.whatsapp || '',
+      serviceId: req.body.serviceId || '',
+      isAvailable: req.body.isAvailable !== false,
     });
 
     res.status(201).json(service);
