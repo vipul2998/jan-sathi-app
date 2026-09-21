@@ -19,4 +19,4 @@ services:
       - key: RESEND_API_KEY
         sync: false
       - key: ALLOWED_ORIGINS
-        value: https://your-app.vercel.app
+        value: https://jan-sathi-app-six.vercel.app,https://jan-sathi-9lnsf4h6b-jansathi.vercel.app

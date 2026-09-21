@@ -19,7 +19,7 @@ const adminRouter = require('./routes/admin');
 
 const app = express();
 const port = process.env.PORT || 5001;
-const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'http://localhost:5173,http://127.0.0.1:5173,https://jan-sathi-9lnsf4h6b-jansathi.vercel.app')
+const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'http://localhost:5173,http://127.0.0.1:5173,https://jan-sathi-9lnsf4h6b-jansathi.vercel.app,https://jan-sathi-app-six.vercel.app')
   .split(',')
   .map((origin) => origin.trim())
   .filter(Boolean);
