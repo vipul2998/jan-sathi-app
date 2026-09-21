@@ -159,8 +159,8 @@ function HomeCard({ icon: Icon, title, subtitle, bg, accent, onClick, wide }) {
     >
       <CardIcon size={22} color={accent} strokeWidth={2} />
       <div>
-        <div style={{ fontSize: 15, fontWeight: 600, color: "#2b2b2b" }}>{title}</div>
-        <div style={{ fontSize: 12.5, color: "#6b6b6b", marginTop: 2 }}>{subtitle}</div>
+        <div style={{ fontSize: 20, fontWeight: 700, color: "#2b2b2b" }}>{title}</div>
+        <div style={{ fontSize: 14, color: "#6b6b6b", marginTop: 4 }}>{subtitle}</div>
       </div>
     </button>
   );
@@ -272,8 +272,8 @@ function DetailScreen({ screenKey, onBack, screens, userName, onNavigate, langua
 
       <div style={{ background: s.bg, borderRadius: 16, padding: 20, marginBottom: 20 }}>
         <Icon size={30} color={s.accent} />
-        <div style={{ fontSize: 19, fontWeight: 700, color: "#2b2b2b", marginTop: 10 }}>{s.title}</div>
-        <div style={{ fontSize: 13.5, color: "#6b6b6b", marginTop: 2 }}>{s.subtitle}</div>
+        <div style={{ fontSize: 20, fontWeight: 700, color: "#2b2b2b", marginTop: 10 }}>{s.title}</div>
+        <div style={{ fontSize: 14, color: "#6b6b6b", marginTop: 4 }}>{s.subtitle}</div>
       </div>
 
       {screenKey === "sos" && (
@@ -623,8 +623,8 @@ function GroceryScreen({ onBack, cart, setCart, screens, products, userId }) {
 
       <div style={{ background: s.bg, borderRadius: 16, padding: 20, marginBottom: 20 }}>
         <ShoppingCart size={30} color={s.accent} />
-        <div style={{ fontSize: 19, fontWeight: 700, color: "#2b2b2b", marginTop: 10 }}>{s.title}</div>
-        <div style={{ fontSize: 13.5, color: "#6b6b6b", marginTop: 2 }}>{s.subtitle}</div>
+        <div style={{ fontSize: 20, fontWeight: 700, color: "#2b2b2b", marginTop: 10 }}>{s.title}</div>
+        <div style={{ fontSize: 14, color: "#6b6b6b", marginTop: 4 }}>{s.subtitle}</div>
       </div>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
@@ -715,9 +715,9 @@ function KharchaTracker({ onBack, expenses, setExpenses, userId }) {
       <div style={{ background: "#F1EEE6", borderRadius: 16, padding: 20, marginBottom: 20 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <Wallet size={22} color="#5a5a4a" />
-          <span style={{ fontSize: 19, fontWeight: 700, color: "#2b2b2b" }}>Kharcha Tracker</span>
+          <span style={{ fontSize: 20, fontWeight: 700, color: "#2b2b2b" }}>Kharcha Tracker</span>
         </div>
-        <div style={{ fontSize: 13.5, color: "#6b6b6b", marginTop: 6 }}>Aaj: ₹{total} kharch hua</div>
+        <div style={{ fontSize: 14, color: "#6b6b6b", marginTop: 6 }}>Aaj: ₹{total} kharch hua</div>
       </div>
 
       <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
@@ -770,8 +770,8 @@ function OrdersScreen({ onBack, orders }) {
       </button>
       <div style={{ background: "#E3F3DC", borderRadius: 16, padding: 20, marginBottom: 20 }}>
         <ShoppingCart size={28} color="#3B7A3E" />
-        <div style={{ fontSize: 19, fontWeight: 700, color: "#2b2b2b", marginTop: 10 }}>Mere Orders</div>
-        <div style={{ fontSize: 13.5, color: "#6b6b6b", marginTop: 2 }}>Aapke grocery orders ka status</div>
+        <div style={{ fontSize: 20, fontWeight: 700, color: "#2b2b2b", marginTop: 10 }}>Mere Orders</div>
+        <div style={{ fontSize: 14, color: "#6b6b6b", marginTop: 4 }}>Aapke grocery orders ka status</div>
       </div>
       {orders.length === 0 ? (
         <p style={{ fontSize: 13.5, color: "#999", textAlign: "center" }}>Abhi koi order nahi hai.</p>
@@ -834,8 +834,8 @@ function AdminScreen({ onBack }) {
       <button onClick={onBack} style={{ background: "none", border: "none", display: "flex", alignItems: "center", gap: 6, color: "#5a5a5a", fontSize: 14, cursor: "pointer", padding: 0, marginBottom: 18 }}><ArrowLeft size={18} /> Wapas</button>
       <div style={{ background: "#E8F0FF", borderRadius: 16, padding: 20, marginBottom: 20 }}>
         <Landmark size={28} color="#2459A6" />
-        <div style={{ fontSize: 19, fontWeight: 700, color: "#2b2b2b", marginTop: 10 }}>Jan Sathi Admin</div>
-        <div style={{ fontSize: 13, color: "#6b6b6b", marginTop: 3 }}>Live data dashboard</div>
+        <div style={{ fontSize: 20, fontWeight: 700, color: "#2b2b2b", marginTop: 10 }}>Jan Sathi Admin</div>
+        <div style={{ fontSize: 14, color: "#6b6b6b", marginTop: 4 }}>Live data dashboard</div>
       </div>
       {!authorized ? (
         <div style={{ background: "#fff", border: "1px solid #eee", borderRadius: 12, padding: 14 }}>
@@ -907,17 +907,17 @@ function EmailLoginScreen({ onLogin }) {
     <div style={{ padding: "40px 24px", minHeight: 500, display: "flex", flexDirection: "column", justifyContent: "center", background: "linear-gradient(180deg, #F5F9FF 0%, #FFFFFF 100%)" }}>
       <div style={{ textAlign: "center", marginBottom: 30 }}>
         <div style={{ width: 82, height: 82, borderRadius: "26px", background: "linear-gradient(145deg, #0052CC 0%, #0066FF 100%)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 27, letterSpacing: "1px", margin: "0 auto 14px", boxShadow: "0 16px 28px rgba(0, 82, 204, 0.22)" }}>JS</div>
-        <div style={{ fontSize: 28, fontWeight: 800, color: "#0052CC", letterSpacing: "0.5px" }}>JAN SATHI</div>
+        <div style={{ fontSize: 32, fontWeight: 800, color: "#0052CC", letterSpacing: "0.5px" }}>JAN SATHI</div>
         <div style={{ fontSize: 12.5, color: "#FF6B6B", marginTop: 6, fontWeight: 700 }}>Har Zaroorat, Ek Jagah</div>
       </div>
       <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
         <button onClick={() => { setMode('login'); setError(''); }} style={{ flex: 1, padding: "10px 4px", borderRadius: 9, border: "1px solid #0052CC", background: mode === 'login' ? '#0052CC' : '#fff', color: mode === 'login' ? '#fff' : '#0052CC', fontWeight: 600, cursor: 'pointer' }}>Login</button>
         <button onClick={() => { setMode('register'); setError(''); }} style={{ flex: 1, padding: "10px 4px", borderRadius: 9, border: "1px solid #0052CC", background: mode === 'register' ? '#0052CC' : '#fff', color: mode === 'register' ? '#fff' : '#0052CC', fontWeight: 600, cursor: 'pointer' }}>Create new account</button>
       </div>
-      {mode === 'register' && <input type="text" placeholder="Aapka naam" value={name} onChange={(event) => setName(event.target.value)} style={{ width: "100%", padding: "12px 14px", borderRadius: 10, border: "1px solid #ddd", fontSize: 15, boxSizing: "border-box", marginBottom: 8 }} />}
-      <input type="email" placeholder="Email ID" value={email} onChange={(event) => setEmail(event.target.value.trim())} style={{ width: "100%", padding: "12px 14px", borderRadius: 10, border: "1px solid #ddd", fontSize: 15, boxSizing: "border-box", marginBottom: 8 }} />
-      <input type="password" placeholder="Password (minimum 6 characters)" value={password} onChange={(event) => setPassword(event.target.value)} style={{ width: "100%", padding: "12px 14px", borderRadius: 10, border: "1px solid #ddd", fontSize: 15, boxSizing: "border-box", marginBottom: 8 }} />
-      {mode === 'register' && <input type="password" placeholder="Password dobara daalo" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} style={{ width: "100%", padding: "12px 14px", borderRadius: 10, border: "1px solid #ddd", fontSize: 15, boxSizing: "border-box", marginBottom: 8 }} />}
+      {mode === 'register' && <input type="text" placeholder="Aapka naam" value={name} onChange={(event) => setName(event.target.value)} style={{ width: "100%", padding: "12px 14px", borderRadius: 10, border: "1px solid #ddd", fontSize: 16, boxSizing: "border-box", marginBottom: 8 }} />}
+      <input type="email" placeholder="Email ID" value={email} onChange={(event) => setEmail(event.target.value.trim())} style={{ width: "100%", padding: "12px 14px", borderRadius: 10, border: "1px solid #ddd", fontSize: 16, boxSizing: "border-box", marginBottom: 8 }} />
+      <input type="password" placeholder="Password (minimum 6 characters)" value={password} onChange={(event) => setPassword(event.target.value)} style={{ width: "100%", padding: "12px 14px", borderRadius: 10, border: "1px solid #ddd", fontSize: 16, boxSizing: "border-box", marginBottom: 8 }} />
+      {mode === 'register' && <input type="password" placeholder="Password dobara daalo" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} style={{ width: "100%", padding: "12px 14px", borderRadius: 10, border: "1px solid #ddd", fontSize: 16, boxSizing: "border-box", marginBottom: 8 }} />}
       {error && <div style={{ color: "#B23B3B", fontSize: 12.5, marginBottom: 8 }}>{error}</div>}
       <button onClick={submit} style={{ width: "100%", background: "linear-gradient(135deg, #0052CC 0%, #0066FF 100%)", color: "#fff", border: "none", borderRadius: 12, padding: "13px 0", fontSize: 15, fontWeight: 700, cursor: "pointer", marginTop: 6, boxShadow: "0 12px 18px rgba(0, 102, 255, 0.22)" }}>{mode === 'register' ? 'Account banao' : 'Login karo'}</button>
     </div>
@@ -1080,7 +1080,7 @@ function LoginScreen({ onLogin }) {
         <div style={{ width: 82, height: 82, borderRadius: "26px", background: "linear-gradient(145deg, #0052CC 0%, #0066FF 100%)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 27, letterSpacing: "1px", margin: "0 auto 14px", boxShadow: "0 16px 28px rgba(0, 82, 204, 0.22)" }}>
           JS
         </div>
-        <div style={{ fontSize: 28, fontWeight: 800, color: "#0052CC", letterSpacing: "0.5px" }}>JAN SATHI</div>
+        <div style={{ fontSize: 32, fontWeight: 800, color: "#0052CC", letterSpacing: "0.5px" }}>JAN SATHI</div>
         <div style={{ fontSize: 12.5, color: "#FF6B6B", marginTop: 6, fontWeight: 700, letterSpacing: "0.2px" }}>Har Zaroorat, Ek Jagah</div>
       </div>
 
@@ -1315,7 +1315,7 @@ export default function JanSathiApp() {
             </button>
 
             <div style={{ textAlign: "center", marginBottom: 22 }}>
-              <div style={{ fontSize: 24, fontWeight: 800, color: "#0052CC", letterSpacing: "-0.6px" }}>JAN SATHI</div>
+              <div style={{ fontSize: 32, fontWeight: 800, color: "#0052CC" }}>JAN SATHI</div>
               <div style={{ fontSize: 12.5, color: "#FF6B6B", marginTop: 5, fontWeight: 700 }}>Har Zaroorat, Ek Jagah</div>
             </div>
             <div style={{ display: "flex", justifyContent: "center", gap: 6, marginBottom: 14 }}>

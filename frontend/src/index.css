@@ -14,6 +14,12 @@
   --brand-soft: #EAF3FF;
   --brand-surface: #F5F9FF;
   --brand-ink: #10213f;
+  --type-heading-1: 32px;
+  --type-heading-2: 24px;
+  --type-heading-3: 20px;
+  --type-body: 16px;
+  --type-supporting: 14px;
+  --type-caption: 12px;
 }
 
 * {
