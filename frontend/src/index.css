@@ -1,0 +1,54 @@
+:root {
+  font-family: 'SF Pro Display', 'SF Pro Text', -apple-system, BlinkMacSystemFont, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  color: #0f172a;
+  background: #f3f7fc;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  --brand-dark: #0052CC;
+  --brand-light: #0066FF;
+  --brand-red: #FF6B6B;
+  --brand-soft: #EAF3FF;
+  --brand-surface: #F5F9FF;
+  --brand-ink: #10213f;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html, body, #root {
+  margin: 0;
+  width: 100%;
+  min-height: 100vh;
+}
+
+body {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at top, #ffffff 0%, #edf4ff 42%, #dce8f7 100%);
+  padding: 24px;
+}
+
+#root {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+button, input {
+  font: inherit;
+}
+
+@media (max-width: 480px) {
+  body {
+    padding: 0;
+    background: #edf4ff;
+  }
+}
