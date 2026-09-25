@@ -1,11 +1,13 @@
 const express = require('express');
 const crypto = require('crypto');
 const User = require('../models/User');
+const { smsService, emailService } = require('../services/NotificationService');
 
 const router = express.Router();
 
 const otpStore = new Map();
 const users = new Map();
+const msg91VerificationStore = new Map();
 
 const normalizePhone = (phone = '') => String(phone).replace(/\D/g, '').slice(-10);
 const normalizeEmail = (email = '') => String(email).trim().toLowerCase();
@@ -27,6 +29,24 @@ const passwordMatches = (password, storedPassword) => {
   const [salt, storedHash] = storedPassword.split(':');
   const hash = crypto.scryptSync(password, salt, 64).toString('hex');
   return crypto.timingSafeEqual(Buffer.from(hash, 'hex'), Buffer.from(storedHash, 'hex'));
+};
+
+const verifyMsg91AccessToken = async (accessToken) => {
+  if (!process.env.MSG91_AUTH_KEY) {
+    return { success: false, error: 'MSG91_AUTH_KEY is not configured' };
+  }
+
+  const response = await fetch('https://control.msg91.com/api/v5/widget/verifyAccessToken', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      authkey: process.env.MSG91_AUTH_KEY,
+      'access-token': accessToken,
+    }),
+  });
+  const result = await response.json().catch(() => ({}));
+  const verified = response.ok && (result.type === 'success' || result.success === true || result.status === 'success');
+  return { success: verified, result };
 };
 
 router.post('/auth/register', async (req, res) => {
@@ -73,8 +93,9 @@ router.post('/auth/login-email', async (req, res) => {
   return res.json({ success: true, message: 'Login successful', user: safeUser });
 });
 
-router.post('/auth/send-otp', (req, res) => {
+router.post('/auth/send-otp', async (req, res) => {
   const phone = normalizePhone(req.body?.phone);
+  const email = normalizeEmail(req.body?.email);
 
   if (!/^\d{10}$/.test(phone)) {
     return res.status(400).json({ success: false, message: 'Sahi 10 anko ka phone number daalo' });
@@ -83,11 +104,68 @@ router.post('/auth/send-otp', (req, res) => {
   const otp = String(Math.floor(1000 + Math.random() * 9000));
   otpStore.set(phone, otp);
 
+  // Send SMS
+  const smsResult = await smsService.sendOTP(phone, otp);
+  console.log('SMS Send Result:', smsResult);
+
+  if (!smsResult.success) {
+    return res.status(503).json({
+      success: false,
+      message: 'OTP sender is not configured or unavailable',
+      error: smsResult.error,
+    });
+  }
+
+  // Send Email if provided
+  if (email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    const emailResult = await emailService.sendOTPEmail(email, otp);
+    console.log('Email Send Result:', emailResult);
+  }
+
   return res.json({
     success: true,
     message: 'OTP sent successfully',
     phone,
+    smsSent: smsResult.success,
+    channel: smsResult.channel,
+    isDemoMode: smsResult.isDemoMode,
+    otp: process.env.NODE_ENV === 'development' ? otp : undefined, // Show OTP in dev mode only
   });
+});
+
+router.post('/auth/verify-msg91-token', async (req, res) => {
+  const phone = normalizePhone(req.body?.phone);
+  const accessToken = String(req.body?.accessToken || '').trim();
+
+  if (!/^\d{10}$/.test(phone) || !accessToken) {
+    return res.status(400).json({ success: false, message: 'Phone aur MSG91 token required hai' });
+  }
+
+  try {
+    const verification = await verifyMsg91AccessToken(accessToken);
+    if (!verification.success) {
+      return res.status(401).json({ success: false, message: 'MSG91 OTP verify nahi hua' });
+    }
+
+    const user = await User.findOneAndUpdate(
+      { phone },
+      { $setOnInsert: { phone, name: `User ${phone.slice(-4)}`, isVerified: true } },
+      { new: true, upsert: true, setDefaultsOnInsert: true },
+    );
+    const verificationId = crypto.randomBytes(24).toString('hex');
+    msg91VerificationStore.set(verificationId, phone);
+    users.set(phone, publicUser(user));
+
+    return res.json({
+      success: true,
+      user: publicUser(user),
+      verificationId,
+      needsProfileSetup: !user.passwordHash,
+    });
+  } catch (error) {
+    console.error('MSG91 token verification error:', error.message);
+    return res.status(502).json({ success: false, message: 'MSG91 service unavailable' });
+  }
 });
 
 router.post('/auth/verify-otp', async (req, res) => {
@@ -125,10 +203,11 @@ router.post('/auth/verify-otp', async (req, res) => {
 router.post('/auth/complete-first-login', async (req, res) => {
   const phone = normalizePhone(req.body?.phone);
   const otp = String(req.body?.otp || '');
+  const verificationId = String(req.body?.verificationId || '');
   const name = String(req.body?.name || '').trim();
   const password = String(req.body?.password || '');
 
-  if (!/^\d{10}$/.test(phone) || !/^\d{4}$/.test(otp)) {
+  if (!/^\d{10}$/.test(phone) || (!/^\d{4}$/.test(otp) && !verificationId)) {
     return res.status(400).json({ success: false, message: 'Phone aur OTP dobara check karo' });
   }
   if (name.length < 2) {
@@ -139,7 +218,10 @@ router.post('/auth/complete-first-login', async (req, res) => {
   }
 
   const storedOtp = otpStore.get(phone);
-  if (!storedOtp || storedOtp !== otp) {
+  const msg91Phone = verificationId ? msg91VerificationStore.get(verificationId) : null;
+  const otpVerified = storedOtp && storedOtp === otp;
+  const msg91Verified = msg91Phone === phone;
+  if (!otpVerified && !msg91Verified) {
     return res.status(401).json({ success: false, message: 'OTP galat hai, dobara try karo' });
   }
 
@@ -154,6 +236,7 @@ router.post('/auth/complete-first-login', async (req, res) => {
   }
 
   otpStore.delete(phone);
+  if (verificationId) msg91VerificationStore.delete(verificationId);
   users.set(phone, publicUser(user));
   return res.json({ success: true, message: 'Profile setup complete', user: publicUser(user) });
 });

@@ -3,22 +3,22 @@
   line-height: 1.5;
   font-weight: 400;
   color: #0f172a;
-  background: #f3f7fc;
+  background: #f4efe5;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  --brand-navy: #001a4d;
-  --brand-dark: #0052CC;
-  --brand-light: #0066FF;
-  --brand-light-highlight: #66B2FF;
-  --brand-gold: #FFD700;
-  --brand-gold-deep: #FF8C00;
-  --brand-red: #E74C3C;
-  --brand-red-deep: #C0392B;
-  --brand-soft: #EAF3FF;
-  --brand-surface: #F5F9FF;
-  --brand-ink: #001a4d;
+  --brand-navy: #102a43;
+  --brand-dark: #174a68;
+  --brand-light: #2c7691;
+  --brand-light-highlight: #8ec5c3;
+  --brand-gold: #c99a3e;
+  --brand-gold-deep: #9d6f24;
+  --brand-red: #b94a48;
+  --brand-red-deep: #8f3536;
+  --brand-soft: #edf4f1;
+  --brand-surface: #fbf8f1;
+  --brand-ink: #102a43;
   --type-heading-1: 32px;
   --type-heading-2: 24px;
   --type-heading-3: 20px;
@@ -42,7 +42,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: radial-gradient(circle at top, #ffffff 0%, #edf4ff 42%, #dce8f7 100%);
+  background: radial-gradient(circle at 12% 8%, #fffdf7 0%, #f4efe5 44%, #dbe7e1 100%);
   padding: 24px;
 }
 

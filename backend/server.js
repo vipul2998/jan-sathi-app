@@ -16,6 +16,7 @@ const communityRouter = require('./routes/community');
 const assistantRouter = require('./routes/assistant');
 const karosubRouter = require('./routes/karosub');
 const adminRouter = require('./routes/admin');
+const paymentsRouter = require('./routes/payments');
 
 const app = express();
 const port = process.env.PORT || 5001;
@@ -55,6 +56,7 @@ app.use('/api', communityRouter);
 app.use('/api', assistantRouter);
 app.use('/api', karosubRouter);
 app.use('/api', adminRouter);
+app.use('/api/payments', paymentsRouter);
 
 function startServer() {
   app.listen(port, () => {

@@ -3,6 +3,24 @@ import { HeartPulse, Wrench, Store, Landmark, Siren, Wallet, ChevronRight, Arrow
 import JanSathiPremiumLogo from "./JanSathiPremiumLogo";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5001";
+const MSG91_WIDGET_ID = import.meta.env.VITE_MSG91_WIDGET_ID;
+const MSG91_WIDGET_TOKEN = import.meta.env.VITE_MSG91_WIDGET_TOKEN;
+
+const loadMsg91Widget = () => new Promise((resolve, reject) => {
+  if (typeof window.initSendOTP === "function") {
+    resolve();
+    return;
+  }
+
+  const script = document.createElement("script");
+  script.src = "https://verify.msg91.com/otp-provider.js";
+  script.async = true;
+  script.onload = () => typeof window.initSendOTP === "function"
+    ? resolve()
+    : reject(new Error("MSG91 widget load nahi hua"));
+  script.onerror = () => reject(new Error("MSG91 widget service unavailable"));
+  document.head.appendChild(script);
+});
 
 const fetchFeatureData = async () => {
   try {
@@ -1125,6 +1143,7 @@ function AdminScreen({ onBack }) {
 
 function EmailLoginScreen({ onLogin }) {
   const [mode, setMode] = useState('login');
+  const [phoneLogin, setPhoneLogin] = useState(false);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -1166,17 +1185,22 @@ function EmailLoginScreen({ onLogin }) {
     }
   };
 
+  if (phoneLogin) {
+    return <LoginScreen onLogin={onLogin} />;
+  }
+
   return (
-    <div style={{ padding: "40px 24px", minHeight: 500, display: "flex", flexDirection: "column", justifyContent: "center", background: "linear-gradient(180deg, #F5F9FF 0%, #FFFFFF 100%)" }}>
+    <div style={{ padding: "40px 24px", minHeight: 500, display: "flex", flexDirection: "column", justifyContent: "center", background: "linear-gradient(180deg, #fbf8f1 0%, #eef4f0 100%)" }}>
       <div style={{ textAlign: "center", marginBottom: 30 }}>
         <div style={{ margin: "0 auto 14px", width: 82, height: 82 }}><JanSathiPremiumLogo size={82} variant="navy-gold" animated /></div>
-        <div style={{ fontSize: 32, fontWeight: 800, color: "#0052CC", letterSpacing: "0.5px" }}>JAN SATHI</div>
-        <div style={{ fontSize: 12.5, color: "#E74C3C", marginTop: 6, fontWeight: 700 }}>Har Zaroorat, Ek Jagah</div>
+        <div style={{ fontSize: 32, fontWeight: 800, color: "#102A43", letterSpacing: "1.5px" }}>JAN SATHI</div>
+        <div style={{ fontSize: 12.5, color: "#9D6F24", marginTop: 6, fontWeight: 700, letterSpacing: "0.6px" }}>Har Zaroorat, Ek Jagah</div>
       </div>
       <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
-        <button onClick={() => { setMode('login'); setError(''); }} style={{ flex: 1, padding: "10px 4px", borderRadius: 9, border: "1px solid #0052CC", background: mode === 'login' ? '#0052CC' : '#fff', color: mode === 'login' ? '#fff' : '#0052CC', fontWeight: 600, cursor: 'pointer' }}>Login</button>
-        <button onClick={() => { setMode('register'); setError(''); }} style={{ flex: 1, padding: "10px 4px", borderRadius: 9, border: "1px solid #0052CC", background: mode === 'register' ? '#0052CC' : '#fff', color: mode === 'register' ? '#fff' : '#0052CC', fontWeight: 600, cursor: 'pointer' }}>Create new account</button>
+        <button onClick={() => { setMode('login'); setError(''); }} style={{ flex: 1, padding: "10px 4px", borderRadius: 9, border: "1px solid #174A68", background: mode === 'login' ? '#174A68' : '#fffdf8', color: mode === 'login' ? '#fff' : '#174A68', fontWeight: 600, cursor: 'pointer' }}>Login</button>
+        <button onClick={() => { setMode('register'); setError(''); }} style={{ flex: 1, padding: "10px 4px", borderRadius: 9, border: "1px solid #174A68", background: mode === 'register' ? '#174A68' : '#fffdf8', color: mode === 'register' ? '#fff' : '#174A68', fontWeight: 600, cursor: 'pointer' }}>Create new account</button>
       </div>
+      <button onClick={() => setPhoneLogin(true)} style={{ width: "100%", background: "#edf4f1", color: "#174A68", border: "1px solid #b8d2c9", borderRadius: 10, padding: "10px 12px", fontSize: 13, fontWeight: 700, cursor: "pointer", marginBottom: 12 }}>Phone se OTP login</button>
       {mode === 'register' && <input type="text" placeholder="Aapka naam" value={name} onChange={(event) => setName(event.target.value)} style={{ width: "100%", padding: "12px 14px", borderRadius: 10, border: "1px solid #ddd", fontSize: 16, boxSizing: "border-box", marginBottom: 8 }} />}
       <input type="email" placeholder="Email ID" value={email} onChange={(event) => setEmail(event.target.value.trim())} style={{ width: "100%", padding: "12px 14px", borderRadius: 10, border: "1px solid #ddd", fontSize: 16, boxSizing: "border-box", marginBottom: 8 }} />
       <input type="password" placeholder="Password (minimum 6 characters)" value={password} onChange={(event) => setPassword(event.target.value)} style={{ width: "100%", padding: "12px 14px", borderRadius: 10, border: "1px solid #ddd", fontSize: 16, boxSizing: "border-box", marginBottom: 8 }} />
@@ -1198,6 +1222,66 @@ function LoginScreen({ onLogin }) {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [sentOtp, setSentOtp] = useState("");
+  const [msg91VerificationId, setMsg91VerificationId] = useState("");
+
+  const openMsg91Widget = async () => {
+    if (!/^\d{10}$/.test(phone)) {
+      setError('Sahi 10 anko ka phone number daalo');
+      return;
+    }
+    if (!MSG91_WIDGET_ID || !MSG91_WIDGET_TOKEN) {
+      setError('MSG91 widget configuration missing hai');
+      return;
+    }
+
+    try {
+      setError('');
+      await loadMsg91Widget();
+      window.initSendOTP({
+        widgetId: MSG91_WIDGET_ID,
+        tokenAuth: MSG91_WIDGET_TOKEN,
+        identifier: `+91${phone}`,
+        exposeMethods: false,
+        success: async (widgetResponse) => {
+          const accessToken = widgetResponse?.accessToken
+            || widgetResponse?.['access-token']
+            || widgetResponse?.token
+            || widgetResponse?.message;
+          if (!accessToken) {
+            setError('MSG91 verification token nahi mila');
+            return;
+          }
+
+          const response = await fetch(`${API_URL}/api/auth/verify-msg91-token`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ phone, accessToken }),
+          });
+          const data = await response.json();
+          if (!response.ok || !data.success) {
+            setError(data.message || 'MSG91 OTP verify failed');
+            return;
+          }
+
+          setError('');
+          setMsg91VerificationId(data.verificationId || '');
+          if (data.needsProfileSetup) {
+            setStep('profile');
+          } else {
+            onLogin(phone, data.user);
+          }
+        },
+        failure: (widgetError) => {
+          const message = widgetError?.message || '';
+          setError(message.includes('403') || message.toLowerCase().includes('invalid request')
+            ? 'MSG91 account mein balance/KYC ya channel permission check karo.'
+            : message || 'MSG91 OTP verification failed');
+        },
+      });
+    } catch (widgetError) {
+      setError(widgetError.message || 'MSG91 widget load nahi hua');
+    }
+  };
 
   const sendOtp = async (forgotPassword = false) => {
     if (!/^\d{10}$/.test(phone)) {
@@ -1297,7 +1381,7 @@ function LoginScreen({ onLogin }) {
       const response = await fetch(`${API_URL}/api/auth/complete-first-login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone, otp, name: name.trim(), password }),
+        body: JSON.stringify({ phone, otp, verificationId: msg91VerificationId, name: name.trim(), password }),
       });
       const data = await response.json();
       if (!response.ok || !data.success) {
@@ -1338,7 +1422,7 @@ function LoginScreen({ onLogin }) {
   };
 
   return (
-<div style={{ padding: "40px 24px", minHeight: 500, display: "flex", flexDirection: "column", justifyContent: "center", background: "linear-gradient(180deg, #F5F9FF 0%, #FFFFFF 100%)" }}>
+<div style={{ padding: "40px 24px", minHeight: 500, display: "flex", flexDirection: "column", justifyContent: "center", background: "linear-gradient(180deg, #fbf8f1 0%, #eef4f0 100%)" }}>
       <div style={{ textAlign: "center", marginBottom: 30 }}>
         <div style={{ margin: "0 auto 14px", width: 82, height: 82 }}><JanSathiPremiumLogo size={82} variant="navy-gold" animated /></div>
         <div style={{ fontSize: 32, fontWeight: 800, color: "#0052CC", letterSpacing: "0.5px" }}>JAN SATHI</div>
@@ -1370,7 +1454,7 @@ function LoginScreen({ onLogin }) {
             />
           )}
           <button
-            onClick={loginMethod === "password" ? loginWithPassword : sendOtp}
+            onClick={loginMethod === "password" ? loginWithPassword : openMsg91Widget}
             style={{ width: "100%", background: "linear-gradient(135deg, #0052CC 0%, #0066FF 100%)", color: "#fff", border: "none", borderRadius: 12, padding: "13px 0", fontSize: 15, fontWeight: 700, cursor: "pointer", marginTop: 6, boxShadow: "0 12px 18px rgba(0, 102, 255, 0.22)" }}
           >
             {loginMethod === "password" ? "Login karo" : "OTP bhejo"}
@@ -1565,7 +1649,7 @@ export default function JanSathiApp() {
 
   return (
     <div style={{ minHeight: "100vh", background: "linear-gradient(180deg, #eef5ff 0%, #dfeeff 100%)", display: "flex", justifyContent: "center", alignItems: "center", fontFamily: "'Segoe UI', sans-serif" }}>
-      <div style={{ width: 380, background: "linear-gradient(180deg, #f8fbff 0%, #ffffff 100%)", borderRadius: 30, margin: "20px 0", boxShadow: "0 20px 40px rgba(0, 82, 204, 0.10)", overflow: "hidden", border: "1px solid rgba(0, 82, 204, 0.08)" }}>
+      <div style={{ width: "min(420px, 100%)", background: "linear-gradient(180deg, #fffdf8 0%, #f3f6f1 100%)", borderRadius: 28, margin: "20px 0", boxShadow: "0 28px 70px rgba(16, 42, 67, 0.18), 0 4px 14px rgba(201, 154, 62, 0.10)", overflow: "hidden", border: "1px solid rgba(201, 154, 62, 0.22)" }}>
         {!isLoggedIn ? (
           <EmailLoginScreen
             onLogin={(phone, user) => {

@@ -4,3 +4,4 @@ frontend/.env
 node_modules/
 dist/
 .DS_Store
+backend/get-twilio-number.js
